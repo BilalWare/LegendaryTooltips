@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.anthonyhilyard.iceberg.util.Tooltips;
+import com.anthonyhilyard.legendarytooltips.LegendaryTooltips;
 import com.anthonyhilyard.legendarytooltips.config.LegendaryTooltipsConfig;
 import com.anthonyhilyard.legendarytooltips.tooltip.TooltipScroll;
 
@@ -25,9 +25,7 @@ public class MouseHandlerMixin
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDDD)Z"))
 	private void scrollTooltips(long windowHandle, double dx, double dy, CallbackInfo info)
 	{
-		// TODO: Tooltips.anyTooltipsVisible() does not exist in this Iceberg version.
-		// Using a fallback check that just checks the config setting.
-		if (LegendaryTooltipsConfig.shouldScrollTooltip())
+		if (LegendaryTooltipsConfig.shouldScrollTooltip() && LegendaryTooltips.isTooltipRenderedThisTick())
 		{
 			if (windowHandle == minecraft.getWindow().getWindow())
 			{

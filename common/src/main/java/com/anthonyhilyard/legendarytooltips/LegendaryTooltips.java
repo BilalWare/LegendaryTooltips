@@ -46,6 +46,17 @@ public class LegendaryTooltips
 	public static final int NUM_FRAMES = 16;
 
 	private static Map<Integer, ItemStack> lastTooltipItems = Maps.newHashMap();
+	private static boolean tooltipRenderedThisTick = false;
+
+	public static boolean isTooltipRenderedThisTick()
+	{
+		return tooltipRenderedThisTick;
+	}
+
+	public static void setTooltipRenderedThisTick(boolean value)
+	{
+		tooltipRenderedThisTick = value;
+	}
 
 	public static final KeyMapping scrollTooltips = Services.getKeyMappingRegistrar().registerMapping(
 		new KeyMapping("legendarytooltips.key.scrollTooltips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_SHIFT, KeyMapping.CATEGORY_INVENTORY));
@@ -76,8 +87,8 @@ public class LegendaryTooltips
 							tooltipElements.remove(i);
 
 							if (tooltipElements.size() > i - 1 && i > 0 &&
-								(tooltipElements.get(i - 1).right().isPresent() && tooltipElements.get(i - 1).right().get() == CommonComponents.EMPTY) ||
-								(tooltipElements.get(i - 1).left().isPresent()  && tooltipElements.get(i - 1).left().get().getString().isEmpty()))
+								((tooltipElements.get(i - 1).right().isPresent() && tooltipElements.get(i - 1).right().get() == CommonComponents.EMPTY) ||
+								 (tooltipElements.get(i - 1).left().isPresent()  && tooltipElements.get(i - 1).left().get().getString().isEmpty())))
 							{
 								tooltipElements.remove(i - 1);
 							}
@@ -114,13 +125,13 @@ public class LegendaryTooltips
 		TooltipDecor.updateTimer(deltaTime);
 		ItemModelComponent.updateTimer(deltaTime);
 
-		// TODO: Tooltips.anyTooltipsVisible() does not exist in this Iceberg version. Using false as a safe fallback.
-		if (false)
+		if (!tooltipRenderedThisTick)
 		{
 			TooltipDecor.resetTimer();
 			TooltipScroll.resetAll();
 			lastTooltipItems.clear();
 		}
+		tooltipRenderedThisTick = false;
 	}
 
 	private static boolean areStacksEqual(ItemStack first, ItemStack second)
@@ -141,6 +152,7 @@ public class LegendaryTooltips
 
 	public static ColorExtResult onTooltipColorEvent(ItemStack stack, GuiGraphics graphics, int x, int y, Font font, int backgroundStart, int backgroundEnd, int borderStart, int borderEnd, List<ClientTooltipComponent> components, boolean comparison, int index, ResourceLocation resourceLocation, boolean gradientBackground, boolean gradientBorder)
 	{
+		tooltipRenderedThisTick = true;
 		ColorExtResult result = new ColorExtResult(backgroundStart, backgroundEnd, borderStart, borderEnd, false, false);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.level == null || minecraft.level.registryAccess() == null)

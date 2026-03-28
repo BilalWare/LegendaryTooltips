@@ -74,9 +74,6 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 	@Override
 	public void renderImage(Font font, int x, int y, int width, int height, GuiGraphics graphics)
 	{
-		// TODO: graphics.flush() has been removed in 1.21.8. The rendering pipeline has changed.
-		// We previously flushed to ensure the model view stack was applied correctly.
-
 		y--;
 		x--;
 		int z = 0;
@@ -128,7 +125,6 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		));
 		modelViewStack.translate(x + margin - 1, y + margin - 1, -120.0f);
 		modelViewStack.scale(1.25f, 1.25f, 1.0f);
-		// TODO: RenderSystem.applyModelViewMatrix() has been removed in 1.21.8. The model view matrix is now applied differently.
 
 		float rotationAngle = 0.0f;
 		if (LegendaryTooltipsConfig.getInstance().modelRotationSpeed.get() > 0)

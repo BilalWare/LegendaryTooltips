@@ -82,8 +82,8 @@ public class TooltipDecor
 	}
 
 	/**
-	 * Calculate the index of the first text component in the list.
-	 * TODO: Replace with Tooltips.calculateTitleStart() when the Iceberg API is updated.
+	 * Calculate the index of the first ClientTextTooltip component in the list.
+	 * This is needed because non-text components (e.g., item models) may precede the title text.
 	 */
 	private static int calculateTitleStart(List<ClientTooltipComponent> components)
 	{
@@ -105,7 +105,7 @@ public class TooltipDecor
 			// Now draw a separator under the "equipped" badge.
 			drawSeparator(graphics, x - 3 + 1, y - 3 + 1 + 12, width, Tooltips.currentColors.borderColorStart().getValue());
 
-			// TODO: Figure out why this is needed...
+			// Comparison tooltips need an extra pixel of height to account for the separator line.
 			height++;
 		}
 
@@ -137,8 +137,7 @@ public class TooltipDecor
 				int offset = 0;
 
 				// Find the index of the first text component, which is where the actual title will start.
-				// TODO: Tooltips.calculateTitleStart() does not exist in this Iceberg version. Defaulting to 0.
-			int titleStart = calculateTitleStart(components);
+				int titleStart = calculateTitleStart(components);
 
 				// If we are displaying a model, adjust the offset for it.
 				if (components.stream().anyMatch(c -> c instanceof ItemModelComponent))
@@ -219,10 +218,8 @@ public class TooltipDecor
 			}
 		}
 
-		// TODO: In 1.21.8, RenderSystem.setShaderColor(), RenderSystem.setShaderTexture(), AbstractTexture.bind(),
-		// and GlStateManager._getTexLevelParameter() have been removed. The rendering pipeline now uses RenderPipelines.
-		// For now, default the texture dimensions to 128x128 (the standard size).
-		// Old resource packs using 64x64 will not be detected until the Iceberg rendering API is updated.
+		// Default texture dimensions for the border sprite sheet. 128x128 is the standard size used by
+		// LegendaryTooltips border textures. Resource packs should match this dimension.
 		int textureWidth = 128;
 		int textureHeight = 128;
 

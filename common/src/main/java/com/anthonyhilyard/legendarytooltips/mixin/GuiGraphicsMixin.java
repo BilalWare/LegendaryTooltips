@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 import com.anthonyhilyard.iceberg.services.Services;
 import com.anthonyhilyard.iceberg.util.ITooltipAccess;
 import com.anthonyhilyard.iceberg.util.Tooltips;
+import com.anthonyhilyard.legendarytooltips.LegendaryTooltips;
 import com.anthonyhilyard.legendarytooltips.config.LegendaryTooltipsConfig;
 import com.anthonyhilyard.legendarytooltips.tooltip.ItemModelComponent;
 import com.anthonyhilyard.legendarytooltips.tooltip.TooltipScroll;
@@ -55,7 +56,13 @@ public class GuiGraphicsMixin
 	private int currentMouseY = 0;
 
 	@Unique
+	private int tooltipX = 0;
+
+	@Unique
 	private int tooltipY = 0;
+
+	@Unique
+	private int tooltipWidth = 0;
 
 	@Unique
 	private int startScrollIndex = 0;
@@ -171,6 +178,7 @@ public class GuiGraphicsMixin
 	@ModifyVariable(method = "renderTooltip", at = @At(value = "STORE", ordinal = 0))
 	private Vector2ic storeTooltipY(Vector2ic pos)
 	{
+		tooltipX = pos.x();
 		tooltipY = pos.y();
 		return pos;
 	}
@@ -186,10 +194,12 @@ public class GuiGraphicsMixin
 			int maxTooltipWidth = LegendaryTooltipsConfig.getMaxTooltipWidth();
 			if (maxTooltipWidth < width)
 			{
+				tooltipWidth = maxTooltipWidth;
 				return maxTooltipWidth;
 			}
 		}
 
+		tooltipWidth = width;
 		return width;
 	}
 
@@ -360,14 +370,10 @@ public class GuiGraphicsMixin
 			}
 		}
 
-		// TODO: Tooltips.getCurrentRect() does not exist in this Iceberg version.
-		// Scissor scrolling is disabled until the Iceberg API is updated.
-		// if (enableScissor)
-		// {
-		// 	Rect2i tooltipRect = Tooltips.getCurrentRect();
-		// 	int currentX = tooltipRect.getX();
-		// 	startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
-		// }
+		if (enableScissor)
+		{
+			startScissor(tooltipX, currentY, tooltipWidth, originalHeight);
+		}
 
 		currentIndex++;
 		if (currentIndex == maxIndex)
@@ -402,14 +408,10 @@ public class GuiGraphicsMixin
 			}
 		}
 
-		// TODO: Tooltips.getCurrentRect() does not exist in this Iceberg version.
-		// Scissor scrolling is disabled until the Iceberg API is updated.
-		// if (enableScissor)
-		// {
-		// 	Rect2i tooltipRect = Tooltips.getCurrentRect();
-		// 	int currentX = tooltipRect.getX();
-		// 	startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
-		// }
+		if (enableScissor)
+		{
+			startScissor(tooltipX, currentY, tooltipWidth, originalHeight);
+		}
 
 		currentIndex++;
 		return currentY;
@@ -431,9 +433,13 @@ public class GuiGraphicsMixin
 			stopScissor();
 		}
 
+		LegendaryTooltips.setTooltipRenderedThisTick(true);
+
 		numTitleLines = 0;
 		titleStart = 0;
+		tooltipX = 0;
 		tooltipY = 0;
+		tooltipWidth = 0;
 		startScrollIndex = 0;
 		hasItemModel = false;
 	}
