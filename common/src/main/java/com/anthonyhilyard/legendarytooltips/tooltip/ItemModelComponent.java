@@ -2,8 +2,6 @@ package com.anthonyhilyard.legendarytooltips.tooltip;
 
 import java.util.List;
 
-import org.joml.Matrix3x2fStack;
-import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
 import com.anthonyhilyard.iceberg.events.client.RegisterTooltipComponentFactoryEvent;
@@ -93,44 +91,41 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		int backgroundStart = ColorUtil.combineARGB((int)(backgroundStartColor.alpha() * 0.15f), backgroundStartColor.red(), backgroundStartColor.green(), backgroundStartColor.blue());
 		int backgroundEnd = ColorUtil.combineARGB((int)(backgroundEndColor.alpha() * 0.6f), backgroundEndColor.red(), backgroundEndColor.green(), backgroundEndColor.blue());
 
-		// In 1.21.8, graphics.pose() returns Matrix3x2fStack instead of PoseStack.
-		// We construct a Matrix4f from the 3x2 matrix using JOML's Matrix4f.set3x2(Matrix3x2fc).
-		Matrix3x2fStack matrixStack = graphics.pose();
-		Matrix4f matrix = new Matrix4f(
-			matrixStack.m00(), matrixStack.m01(), 0, 0,
-			matrixStack.m10(), matrixStack.m11(), 0, 0,
-			0, 0, 1, 0,
-			matrixStack.m20(), matrixStack.m21(), 0, 1
-		);
-
 		// Draw the background first.
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundStart, backgroundEnd);
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundEnd, backgroundStart);
-		GuiHelper.drawGradientRectHorizontal(matrix, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundStart, backgroundEnd);
-		GuiHelper.drawGradientRectHorizontal(matrix, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundEnd, backgroundStart);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundStart, backgroundEnd);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundEnd, backgroundStart);
+		GuiHelper.drawGradientRectHorizontal(graphics, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundStart, backgroundEnd);
+		GuiHelper.drawGradientRectHorizontal(graphics, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundEnd, backgroundStart);
 
 		// Draw the border.
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1, y + margin, x + getRenderWidth() - margin - 1, y + margin + 1, borderColor, borderColor);
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1, y + getRenderHeight() - margin - 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin, borderColor, borderColor);
-		GuiHelper.drawGradientRect(matrix, z, x + margin, y + margin + 1, x + margin + 1, y + getRenderHeight() - margin - 1, borderColor, borderColor);
-		GuiHelper.drawGradientRect(matrix, z, x + getRenderWidth() - margin - 1, y + margin + 1, x + getRenderWidth() - margin, y + getRenderHeight() - margin - 1, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1, y + margin, x + getRenderWidth() - margin - 1, y + margin + 1, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1, y + getRenderHeight() - margin - 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin, y + margin + 1, x + margin + 1, y + getRenderHeight() - margin - 1, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + getRenderWidth() - margin - 1, y + margin + 1, x + getRenderWidth() - margin, y + getRenderHeight() - margin - 1, borderColor, borderColor);
 
 		borderColor = ColorUtil.combineARGB((int)(borderStartColor.alpha() * 0.15f),
 				(int)((borderStartColor.red() + borderEndColor.red()) * 0.5f),
 				(int)((borderStartColor.green() + borderEndColor.green()) * 0.5f),
 				(int)((borderStartColor.blue() + borderEndColor.blue()) * 0.5f));
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1,						y + margin + 1,						x + getRenderWidth() - margin - 1, y + margin + 2, borderColor, borderColor);
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1,						y + getRenderHeight() - margin - 2, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, borderColor, borderColor);
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 1,						y + margin + 2,						x + margin + 2, y + getRenderHeight() - margin - 2, borderColor, borderColor);
-		GuiHelper.drawGradientRect(matrix, z, x + getRenderWidth() - margin - 2,	y + margin + 2,						x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 2, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1,						y + margin + 1,						x + getRenderWidth() - margin - 1, y + margin + 2, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1,						y + getRenderHeight() - margin - 2, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 1,						y + margin + 2,						x + margin + 2, y + getRenderHeight() - margin - 2, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + getRenderWidth() - margin - 2,	y + margin + 2,						x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 2, borderColor, borderColor);
 
 		borderColor = ColorUtil.combineARGB((int)(borderStartColor.alpha() * 0.05f), borderEndColor.red(), borderEndColor.green(), borderEndColor.blue());
 
-		GuiHelper.drawGradientRect(matrix, z, x + margin + 2,						y + margin + 2,						x + getRenderWidth() - margin - 2, y + getRenderHeight() - margin - 3, borderColor, borderColor);
+		GuiHelper.drawGradientRect(graphics, z, x + margin + 2,						y + margin + 2,						x + getRenderWidth() - margin - 2, y + getRenderHeight() - margin - 3, borderColor, borderColor);
 
 		final Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
 		modelViewStack.pushMatrix();
-		modelViewStack.mul(matrix);
+		// Apply the current 2D pose transform from GuiGraphics.
+		org.joml.Matrix3x2fStack poseStack = graphics.pose();
+		modelViewStack.mul(new org.joml.Matrix4f(
+			poseStack.m00(), poseStack.m01(), 0, 0,
+			poseStack.m10(), poseStack.m11(), 0, 0,
+			0, 0, 1, 0,
+			poseStack.m20(), poseStack.m21(), 0, 1
+		));
 		modelViewStack.translate(x + margin - 1, y + margin - 1, -120.0f);
 		modelViewStack.scale(1.25f, 1.25f, 1.0f);
 		// TODO: RenderSystem.applyModelViewMatrix() has been removed in 1.21.8. The model view matrix is now applied differently.

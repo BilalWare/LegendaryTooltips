@@ -191,9 +191,6 @@ public class TooltipDecor
 		if (LegendaryTooltipsConfig.getInstance().shineEffect.get())
 		{
 			// Draw shiny effect here.
-			graphics.pose().pushMatrix();
-			Matrix4f matrix = matrixFrom3x2(graphics.pose());
-
 			if (shineTimer >= 0.5f && shineTimer <= 1.5f)
 			{
 				float interval = 1.0f - Mth.clamp((shineTimer - 0.5f) * 2.0f - 0.5f, -0.5f, 1.5f);
@@ -205,8 +202,8 @@ public class TooltipDecor
 				int left = (int)Easing.Ease(horizontalMin, horizontalMax, Math.clamp(interval - 0.35f, 0.0f, 1.0f), EasingType.Quad);
 				int middle = (int)Easing.Ease(horizontalMin, horizontalMax, Math.clamp(interval, 0.0f, 1.0f), EasingType.Quad);
 				int right = (int)Easing.Ease(horizontalMin, horizontalMax, Math.clamp(interval + 0.35f, 0.0f, 1.0f), EasingType.Quad);
-				GuiHelper.drawGradientRectHorizontal(matrix, 400,   left, y - 3, middle, y - 3 + 1, 0x00FFFFFF, 0x00FFFFFF | alpha);
-				GuiHelper.drawGradientRectHorizontal(matrix, 400, middle, y - 3,  right, y - 3 + 1, 0x00FFFFFF | alpha, 0x00FFFFFF);
+				GuiHelper.drawGradientRectHorizontal(graphics, 400,   left, y - 3, middle, y - 3 + 1, 0x00FFFFFF, 0x00FFFFFF | alpha);
+				GuiHelper.drawGradientRectHorizontal(graphics, 400, middle, y - 3,  right, y - 3 + 1, 0x00FFFFFF | alpha, 0x00FFFFFF);
 			}
 
 			if (shineTimer <= 1.0f)
@@ -217,11 +214,9 @@ public class TooltipDecor
 				int verticalMin = y - 3 + 1;
 				int verticalMax = y + height + 3 - 1;
 				int verticalInterval = (int)Mth.lerp(interval * interval, verticalMax, verticalMin);
-				GuiHelper.drawGradientRect(matrix, 400, x - 3, Math.max(verticalInterval - 12, verticalMin), x - 3 + 1, Math.min(verticalInterval, verticalMax), 0x00FFFFFF, 0x00FFFFFF | alpha);
-				GuiHelper.drawGradientRect(matrix, 400, x - 3, Math.max(verticalInterval, verticalMin), x - 3 + 1, Math.min(verticalInterval + 12, verticalMax), 0x00FFFFFF | alpha, 0x00FFFFFF);
+				GuiHelper.drawGradientRect(graphics, 400, x - 3, Math.max(verticalInterval - 12, verticalMin), x - 3 + 1, Math.min(verticalInterval, verticalMax), 0x00FFFFFF, 0x00FFFFFF | alpha);
+				GuiHelper.drawGradientRect(graphics, 400, x - 3, Math.max(verticalInterval, verticalMin), x - 3 + 1, Math.min(verticalInterval + 12, verticalMax), 0x00FFFFFF | alpha, 0x00FFFFFF);
 			}
-			
-			graphics.pose().popMatrix();
 		}
 
 		// TODO: In 1.21.8, RenderSystem.setShaderColor(), RenderSystem.setShaderTexture(), AbstractTexture.bind(),
@@ -240,32 +235,29 @@ public class TooltipDecor
 		final int partWidth = frameWidth - partSize * 2;
 
 		// Here we will overlay a 6-patch border over the tooltip to make it look fancy.
-		// TODO: Update when Iceberg API for 1.21.8 is confirmed. GuiHelper.blit takes PoseStack,
-		// but graphics.pose() now returns Matrix3x2fStack. Using a temporary PoseStack as a workaround.
-		// The z-translate (400.0) cannot be represented in Matrix3x2fStack, so it is applied to the temp PoseStack.
-		PoseStack tempPose = new PoseStack();
-		tempPose.translate(0, 0, 400.0);
+		// Use GuiGraphics.blit with RenderPipelines.GUI_TEXTURED and the border texture resource location.
+		ResourceLocation borderTexture = frameDefinition.resource() != null ? frameDefinition.resource() : DEFAULT_BORDERS;
 
 		// Render top-left corner.
-		GuiHelper.blit(tempPose, x - partSize + cornerOffset, y - partSize + cornerOffset, partSize, partSize, (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partSize, partSize, textureWidth, textureHeight);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, borderTexture, x - partSize + cornerOffset, y - partSize + cornerOffset, (float)((frameIndex / 8) * frameWidth), (float)((frameIndex * frameHeight) % textureHeight), partSize, partSize, textureWidth, textureHeight);
 
 		// Render top-right corner.
-		GuiHelper.blit(tempPose, x + width - cornerOffset, y - partSize + cornerOffset, partSize, partSize, (frameWidth - partSize) + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partSize, partSize, textureWidth, textureHeight);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, borderTexture, x + width - cornerOffset, y - partSize + cornerOffset, (float)((frameWidth - partSize) + (frameIndex / 8) * frameWidth), (float)((frameIndex * frameHeight) % textureHeight), partSize, partSize, textureWidth, textureHeight);
 
 		// Render bottom-left corner.
-		GuiHelper.blit(tempPose, x - partSize + cornerOffset, y + height - cornerOffset, partSize, partSize, (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partSize, partSize, textureWidth, textureHeight);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, borderTexture, x - partSize + cornerOffset, y + height - cornerOffset, (float)((frameIndex / 8) * frameWidth), (float)((frameIndex * frameHeight) % textureHeight + partSize), partSize, partSize, textureWidth, textureHeight);
 
 		// Render bottom-right corner.
-		GuiHelper.blit(tempPose, x + width - cornerOffset, y + height - cornerOffset, partSize, partSize, (frameWidth - partSize) + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partSize, partSize, textureWidth, textureHeight);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, borderTexture, x + width - cornerOffset, y + height - cornerOffset, (float)((frameWidth - partSize) + (frameIndex / 8) * frameWidth), (float)((frameIndex * frameHeight) % textureHeight + partSize), partSize, partSize, textureWidth, textureHeight);
 
 		// Only render central embellishments if the tooltip is 48 pixels wide or more.
 		if (width >= partWidth)
 		{
 			// Render top central embellishment.
-			GuiHelper.blit(tempPose, x + (width / 2) - (partWidth / 2), y - partSize + partOffset, partWidth, partSize, partSize + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partWidth, partSize, textureWidth, textureHeight);
+			graphics.blit(RenderPipelines.GUI_TEXTURED, borderTexture, x + (width / 2) - (partWidth / 2), y - partSize + partOffset, (float)(partSize + (frameIndex / 8) * frameWidth), (float)((frameIndex * frameHeight) % textureHeight), partWidth, partSize, textureWidth, textureHeight);
 
 			// Render bottom central embellishment.
-			GuiHelper.blit(tempPose, x + (width / 2) - (partWidth / 2), y + height - partOffset, partWidth, partSize, partSize + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partWidth, partSize, textureWidth, textureHeight);
+			graphics.blit(RenderPipelines.GUI_TEXTURED, borderTexture, x + (width / 2) - (partWidth / 2), y + height - partOffset, (float)(partSize + (frameIndex / 8) * frameWidth), (float)((frameIndex * frameHeight) % textureHeight + partSize), partWidth, partSize, textureWidth, textureHeight);
 		}
 	}
 }
