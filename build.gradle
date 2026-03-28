@@ -46,7 +46,8 @@ subprojects {
 		minecraft "net.minecraft:minecraft:$rootProject.minecraftVersion"
 		mappings loom.officialMojangMappings()
 
-		modImplementation fileTree(dir: "../libs", include: ["*.jar"])
+		// Use dev JARs (named mappings) for both compile and runtime
+		implementation fileTree(dir: "../libs-dev", include: ["*.jar"])
 	}
 
 	java {

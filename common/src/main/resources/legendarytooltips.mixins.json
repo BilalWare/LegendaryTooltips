@@ -4,10 +4,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"plugin": "com.anthonyhilyard.legendarytooltips.mixin.MixinConfig",
 	"client": [
-		"BakedGlyphMixin",
 		"GuiGraphicsMixin",
 		"ItemStackMixin",
-		"KeyboardHandlerMixin",
 		"MouseHandlerMixin",
 		"ScreenMixin"
 	],

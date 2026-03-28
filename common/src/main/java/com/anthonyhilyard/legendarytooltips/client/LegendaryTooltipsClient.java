@@ -23,6 +23,6 @@ public class LegendaryTooltipsClient
 		RenderTickEvents.START.register(LegendaryTooltips::onRenderTick);
 		RenderTickEvents.START.register(TooltipScroll::onRenderTick);
 
-		Services.getReloadListenerRegistrar().registerListener(FrameResourceParser.INSTANCE, ResourceLocation.fromNamespaceAndPath(LegendaryTooltips.MODID, "frame_definitions"));
+		// Resource reload listener is registered in platform-specific code to avoid remapping issues.
 	}
 }
