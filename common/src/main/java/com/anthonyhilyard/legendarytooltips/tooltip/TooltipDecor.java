@@ -26,6 +26,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import net.minecraft.client.gui.GuiGraphics;
+
 import org.lwjgl.opengl.GL11;
 
 public class TooltipDecor
@@ -67,12 +69,12 @@ public class TooltipDecor
 		shineTimer = 1.5f;
 	}
 	
-	public static void drawShadow(PoseStack poseStack, int x, int y, int width, int height)
+	public static void drawShadow(GuiGraphics graphics, int x, int y, int width, int height)
 	{
 		int shadowColor = 0x44000000;
-		
-		poseStack.pushPose();
-		Matrix4f matrix = poseStack.last().pose();
+
+		graphics.pose().pushMatrix();
+		Matrix4f matrix = new Matrix4f().set(graphics.pose());
 		GuiHelper.drawGradientRect(matrix, 390, x - 1,         y + height + 4, x + width + 4, y + height + 5, shadowColor, shadowColor);
 		GuiHelper.drawGradientRect(matrix, 390, x + width + 4, y - 1,          x + width + 5, y + height + 5, shadowColor, shadowColor);
 
@@ -80,25 +82,25 @@ public class TooltipDecor
 
 		GuiHelper.drawGradientRect(matrix, 390, x,             y + height + 5, x + width + 5, y + height + 6, shadowColor, shadowColor);
 		GuiHelper.drawGradientRect(matrix, 390, x + width + 5, y,              x + width + 6, y + height + 5, shadowColor, shadowColor);
-		poseStack.popPose();
+		graphics.pose().popMatrix();
 	}
 
-	public static void drawSeparator(PoseStack poseStack, int x, int y, int width, int color)
+	public static void drawSeparator(GuiGraphics graphics, int x, int y, int width, int color)
 	{
-		poseStack.pushPose();
-		Matrix4f matrix = poseStack.last().pose();
+		graphics.pose().pushMatrix();
+		Matrix4f matrix = new Matrix4f().set(graphics.pose());
 		GuiHelper.drawGradientRectHorizontal(matrix, 400, x, y, x + width / 2, y + 1, color & 0xFFFFFF, color);
 		GuiHelper.drawGradientRectHorizontal(matrix, 400, x + width / 2, y, x + width, y + 1, color, color & 0xFFFFFF);
-		poseStack.popPose();
+		graphics.pose().popMatrix();
 	}
 
-	public static void drawBorder(PoseStack poseStack, int x, int y, int width, int height, ItemStack item, List<ClientTooltipComponent> components, Font font, FrameDefinition frameDefinition, boolean comparison, int index)
+	public static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, ItemStack item, List<ClientTooltipComponent> components, Font font, FrameDefinition frameDefinition, boolean comparison, int index)
 	{
 		// If this is a comparison tooltip, we need to draw the separator first.
 		if (comparison)
 		{
 			// Now draw a separator under the "equipped" badge.
-			drawSeparator(poseStack, x - 3 + 1, y - 3 + 1 + 12, width, Tooltips.currentColors.borderColorStart());
+			drawSeparator(graphics, x - 3 + 1, y - 3 + 1 + 12, width, Tooltips.currentColors.borderColorStart());
 
 			// TODO: Figure out why this is needed...
 			height++;
@@ -159,11 +161,11 @@ public class TooltipDecor
 					ClientTooltipComponent component = components.get(i);
 					if (component instanceof ClientTextTooltip)
 					{
-						offset += Math.max(component.getHeight(), font.lineHeight);
+						offset += Math.max(component.getHeight(font), font.lineHeight);
 					}
 					else
 					{
-						offset += component.getHeight();
+						offset += component.getHeight(font);
 						if (i <= titleStart)
 						{
 							offset += 2;
@@ -172,7 +174,7 @@ public class TooltipDecor
 				}
 
 				// Now draw the separator under the title.
-				drawSeparator(poseStack, x - 3 + 1, y - 3 + 2 + offset, width, Tooltips.currentColors.borderColorStart());
+				drawSeparator(graphics, x - 3 + 1, y - 3 + 2 + offset, width, Tooltips.currentColors.borderColorStart());
 			}
 		}
 
@@ -185,8 +187,8 @@ public class TooltipDecor
 		if (LegendaryTooltipsConfig.getInstance().shineEffect.get())
 		{
 			// Draw shiny effect here.
-			poseStack.pushPose();
-			Matrix4f matrix = poseStack.last().pose();
+			graphics.pose().pushMatrix();
+			Matrix4f matrix = new Matrix4f().set(graphics.pose());
 
 			if (shineTimer >= 0.5f && shineTimer <= 1.5f)
 			{
@@ -215,7 +217,7 @@ public class TooltipDecor
 				GuiHelper.drawGradientRect(matrix, 400, x - 3, Math.max(verticalInterval, verticalMin), x - 3 + 1, Math.min(verticalInterval + 12, verticalMax), 0x00FFFFFF | alpha, 0x00FFFFFF);
 			}
 			
-			poseStack.popPose();
+			graphics.pose().popMatrix();
 		}
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -239,31 +241,32 @@ public class TooltipDecor
 		final int partWidth = frameWidth - partSize * 2;
 
 		// Here we will overlay a 6-patch border over the tooltip to make it look fancy.
-		poseStack.pushPose();
-		poseStack.translate(0, 0, 400.0);
+		// TODO: Update when Iceberg API for 1.21.8 is confirmed. GuiHelper.blit takes PoseStack,
+		// but graphics.pose() now returns Matrix3x2fStack. Using a temporary PoseStack as a workaround.
+		// The z-translate (400.0) cannot be represented in Matrix3x2fStack, so it is applied to the temp PoseStack.
+		PoseStack tempPose = new PoseStack();
+		tempPose.translate(0, 0, 400.0);
 
 		// Render top-left corner.
-		GuiHelper.blit(poseStack, x - partSize + cornerOffset, y - partSize + cornerOffset, partSize, partSize, (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partSize, partSize, textureWidth, textureHeight);
+		GuiHelper.blit(tempPose, x - partSize + cornerOffset, y - partSize + cornerOffset, partSize, partSize, (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partSize, partSize, textureWidth, textureHeight);
 
 		// Render top-right corner.
-		GuiHelper.blit(poseStack, x + width - cornerOffset, y - partSize + cornerOffset, partSize, partSize, (frameWidth - partSize) + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partSize, partSize, textureWidth, textureHeight);
+		GuiHelper.blit(tempPose, x + width - cornerOffset, y - partSize + cornerOffset, partSize, partSize, (frameWidth - partSize) + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partSize, partSize, textureWidth, textureHeight);
 
 		// Render bottom-left corner.
-		GuiHelper.blit(poseStack, x - partSize + cornerOffset, y + height - cornerOffset, partSize, partSize, (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partSize, partSize, textureWidth, textureHeight);
+		GuiHelper.blit(tempPose, x - partSize + cornerOffset, y + height - cornerOffset, partSize, partSize, (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partSize, partSize, textureWidth, textureHeight);
 
 		// Render bottom-right corner.
-		GuiHelper.blit(poseStack, x + width - cornerOffset, y + height - cornerOffset, partSize, partSize, (frameWidth - partSize) + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partSize, partSize, textureWidth, textureHeight);
+		GuiHelper.blit(tempPose, x + width - cornerOffset, y + height - cornerOffset, partSize, partSize, (frameWidth - partSize) + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partSize, partSize, textureWidth, textureHeight);
 
 		// Only render central embellishments if the tooltip is 48 pixels wide or more.
 		if (width >= partWidth)
 		{
 			// Render top central embellishment.
-			GuiHelper.blit(poseStack, x + (width / 2) - (partWidth / 2), y - partSize + partOffset, partWidth, partSize, partSize + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partWidth, partSize, textureWidth, textureHeight);
+			GuiHelper.blit(tempPose, x + (width / 2) - (partWidth / 2), y - partSize + partOffset, partWidth, partSize, partSize + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight, partWidth, partSize, textureWidth, textureHeight);
 
 			// Render bottom central embellishment.
-			GuiHelper.blit(poseStack, x + (width / 2) - (partWidth / 2), y + height - partOffset, partWidth, partSize, partSize + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partWidth, partSize, textureWidth, textureHeight);
+			GuiHelper.blit(tempPose, x + (width / 2) - (partWidth / 2), y + height - partOffset, partWidth, partSize, partSize + (frameIndex / 8) * frameWidth, (frameIndex * frameHeight) % textureHeight + partSize, partWidth, partSize, textureWidth, textureHeight);
 		}
-
-		poseStack.popPose();
 	}
 }

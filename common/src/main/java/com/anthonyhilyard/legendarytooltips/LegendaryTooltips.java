@@ -23,7 +23,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Either;
 
 import com.anthonyhilyard.iceberg.events.client.RenderTooltipEvents.ColorExtResult;
@@ -175,15 +174,14 @@ public class LegendaryTooltips
 		}
 
 		FrameDefinition frameDefinition = LegendaryTooltipsConfig.getInstance().getFrameDefinition(stack, minecraft.level.registryAccess());
-		PoseStack poseStack = graphics.pose();
 
 		// If tooltip shadows are enabled, draw one now.
 		if (LegendaryTooltipsConfig.getInstance().tooltipShadow.get())
 		{
-			TooltipDecor.drawShadow(poseStack, x, y, width, height);
+			TooltipDecor.drawShadow(graphics, x, y, width, height);
 		}
 
 		// If this item has a defined border, draw it.
-		TooltipDecor.drawBorder(poseStack, x, y, width, height, stack, components, font, frameDefinition, comparison, index);
+		TooltipDecor.drawBorder(graphics, x, y, width, height, stack, components, font, frameDefinition, comparison, index);
 	}
 }

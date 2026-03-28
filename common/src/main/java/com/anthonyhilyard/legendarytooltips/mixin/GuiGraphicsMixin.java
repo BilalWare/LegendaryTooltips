@@ -4,14 +4,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.joml.Matrix4f;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3x2fStack;
 import org.joml.Vector2ic;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Group;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
@@ -39,8 +38,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 @Mixin(GuiGraphics.class)
@@ -70,9 +69,6 @@ public class GuiGraphicsMixin
 	@Unique
 	private boolean hasItemModel = false;
 
-	@Shadow
-	private boolean managed;
-
 	@ModifyVariable(method = "renderTooltipInternal", ordinal = 0, at = @At(value = "LOAD", ordinal = 0), argsOnly = true)
 	private List<ClientTooltipComponent> mutableComponents(List<ClientTooltipComponent> components)
 	{
@@ -100,7 +96,7 @@ public class GuiGraphicsMixin
 	}
 
 	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", ordinal = 0))
-	private void adjustTitle(Font font, List<ClientTooltipComponent> components, int mouseX, int mouseY, ClientTooltipPositioner positioner, CallbackInfo info)
+	private void adjustTitle(Font font, List<ClientTooltipComponent> components, int mouseX, int mouseY, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		currentMouseX = mouseX;
 		currentMouseY = mouseY;
@@ -182,8 +178,7 @@ public class GuiGraphicsMixin
 		return pos;
 	}
 
-	@Group(name = "tooltipWidth", max = 1)
-	@ModifyArg(method = "lambda$renderTooltipInternal$3", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIIIIIII)V"), index = 3)
+	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V"), index = 3)
 	private int overrideTooltipWidthOnDraw(int width)
 	{
 		// Only apply max width to item tooltips.
@@ -201,15 +196,7 @@ public class GuiGraphicsMixin
 		return width;
 	}
 
-	@Group(name = "tooltipWidth", max = 1)
-	@ModifyArg(method = "method_51743", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIII)V"), index = 3)
-	private int overrideTooltipWidthOnDraw2(int width)
-	{
-		return overrideTooltipWidthOnDraw(width);
-	}
-
-	@Group(name = "tooltipHeight", max = 1)
-	@ModifyArg(method = "lambda$renderTooltipInternal$3", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIIIIIII)V"), index = 4)
+	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V"), index = 4)
 	private int overrideTooltipHeightOnDraw(int height)
 	{
 		// Only apply max height to item tooltips.
@@ -225,13 +212,6 @@ public class GuiGraphicsMixin
 		}
 
 		return height;
-	}
-
-	@Group(name = "tooltipHeight", max = 1)
-	@ModifyArg(method = "method_51743", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIII)V"), index = 4)
-	private int overrideTooltipHeightOnDraw2(int height)
-	{
-		return overrideTooltipHeightOnDraw(height);
 	}
 
 
@@ -301,15 +281,14 @@ public class GuiGraphicsMixin
 			TooltipRenderContext context = Tooltips.getCurrentRenderContext();
 			GuiGraphics self = (GuiGraphics)(Object)this;
 
-			managed = true;
 			self.enableScissor(x - 1, y - 1, x + width + 1, y + height - (y - tooltipY) + 1);
 
 			TooltipScroll.setTooltipVisible(context.index(), true);
 			TooltipScroll.setScrollBounds(context.index(), y - 1, y + height - (y - tooltipY) + 1);
 			TooltipScroll.setContentHeight(context.index(), contentHeight);
 
-			self.pose().pushPose();
-			self.pose().translate(0.0f, -TooltipScroll.currentScroll(context.index()), 0.0f);
+			self.pose().pushMatrix();
+			self.pose().translate(0.0f, -TooltipScroll.currentScroll(context.index()));
 
 			scissorEnabled = true;
 			enableScissor = false;
@@ -321,12 +300,11 @@ public class GuiGraphicsMixin
 	{
 		TooltipRenderContext context = Tooltips.getCurrentRenderContext();
 		GuiGraphics self = (GuiGraphics)(Object)this;
-		self.pose().popPose();
+		self.pose().popMatrix();
 
 		TooltipScroll.setTooltipVisible(context.index(), false);
 
 		self.disableScissor();
-		managed = false;
 
 		scissorEnabled = false;
 	}
@@ -351,15 +329,15 @@ public class GuiGraphicsMixin
 	@Unique
 	private static int maxIndex = 0;
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V"))
-	private void resetComponentIteration(Font font, List<ClientTooltipComponent> list, int i, int j, ClientTooltipPositioner clientTooltipPositioner, CallbackInfo info)
+	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V", shift = Shift.AFTER))
+	private void resetComponentIteration(Font font, List<ClientTooltipComponent> list, int i, int j, ClientTooltipPositioner clientTooltipPositioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		currentIndex = 0;
 		maxIndex = list.size();
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/Font;IILorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;)V"), index = 2)
-	private int scrollText(Font font, int currentX, int currentY, Matrix4f matrix4f, MultiBufferSource.BufferSource bufferSource)
+	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;II)V"), index = 3)
+	private int scrollText(int currentY)
 	{
 		// Adjust vertical position for multi-line titles to fix improper spacing.
 		if (titleStart + numTitleLines > 1 && currentIndex > 0 && currentIndex < titleStart + numTitleLines)
@@ -386,6 +364,7 @@ public class GuiGraphicsMixin
 		if (enableScissor)
 		{
 			Rect2i tooltipRect = Tooltips.getCurrentRect();
+			int currentX = tooltipRect.getX();
 			startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
 		}
 
@@ -397,8 +376,8 @@ public class GuiGraphicsMixin
 		return currentY;
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IILnet/minecraft/client/gui/GuiGraphics;)V"), index = 2)
-	private int scrollImages(Font font, int currentX, int currentY, GuiGraphics guiGraphics)
+	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IIIILnet/minecraft/client/gui/GuiGraphics;)V"), index = 2)
+	private int scrollImages(int currentY)
 	{
 		// Adjust vertical position for multi-line titles.
 		if (titleStart + numTitleLines > 1 && currentIndex > 0 && currentIndex < titleStart + numTitleLines)
@@ -425,6 +404,7 @@ public class GuiGraphicsMixin
 		if (enableScissor)
 		{
 			Rect2i tooltipRect = Tooltips.getCurrentRect();
+			int currentX = tooltipRect.getX();
 			startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
 		}
 
@@ -432,8 +412,8 @@ public class GuiGraphicsMixin
 		return currentY;
 	}
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V", shift = Shift.AFTER))
-	private void fixLayering(Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, CallbackInfo info)
+	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2fStack;pushMatrix()Lorg/joml/Matrix3x2fStack;", shift = Shift.AFTER))
+	private void fixLayering(Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		TooltipRenderContext context = Tooltips.getCurrentRenderContext();
 		GuiGraphics self = (GuiGraphics)(Object)this;
@@ -444,11 +424,12 @@ public class GuiGraphicsMixin
 			zOffset += 90.0f;
 		}
 
-		self.pose().translate(0, 0, -zOffset);
+		// TODO: Matrix3x2fStack is 2D only, z-axis translation is no longer possible here.
+		// self.pose().translate(0, 0, -zOffset);
 	}
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;popPose()V"))
-	private void turnOffScissor(Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, CallbackInfo info)
+	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2fStack;popMatrix()Lorg/joml/Matrix3x2fStack;"))
+	private void turnOffScissor(Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		if (scissorEnabled)
 		{
@@ -473,7 +454,7 @@ public class GuiGraphicsMixin
 
 	@Redirect(method = "renderTooltipInternal",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;getWidth(Lnet/minecraft/client/gui/Font;)I"))
-	private int arsNouveauCompatGetWidthProxy(ClientTooltipComponent instance, Font font, Font font2, List<ClientTooltipComponent> list, int i, int j, ClientTooltipPositioner clientTooltipPositioner)
+	private int arsNouveauCompatGetWidthProxy(ClientTooltipComponent instance, Font font, Font font2, List<ClientTooltipComponent> list, int i, int j, ClientTooltipPositioner clientTooltipPositioner, @Nullable ResourceLocation resourceLocation)
 	{
 		// If this is an Ars Nouveau School tooltip component, nudge it over if the title is being centered.
 		if (instance.getClass().getName().contentEquals("com.hollingsworth.arsnouveau.client.gui.SchoolTooltip$SchoolTooltipRenderer"))
@@ -504,14 +485,14 @@ public class GuiGraphicsMixin
 	}
 
 	@ModifyArgs(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Ljava/util/List;get(I)Ljava/lang/Object;", ordinal = 1))
-	private void arsNouveauCompatComponentCheck(Args args, Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner)
+	private void arsNouveauCompatComponentCheck(Args args, Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation)
 	{
 		int i = args.get(0);
 		arsNouveauComponent = i < components.size() && components.get(i).getClass().getName().contentEquals("com.hollingsworth.arsnouveau.client.gui.SchoolTooltip$SchoolTooltipRenderer");
 	}
 
 	@ModifyArgs(method = "renderTooltipInternal",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IILnet/minecraft/client/gui/GuiGraphics;)V"))
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IIIILnet/minecraft/client/gui/GuiGraphics;)V"))
 	private void arsNouveauCompatOffsetComponent(Args args)
 	{
 		if (arsNouveauComponent &&

@@ -1,0 +1,8 @@
+{
+  "enabledMcpjsonServers": [
+    "minecraft-dev",
+    "fetch",
+    "intellij",
+    "intellij-debugger"
+  ]
+}

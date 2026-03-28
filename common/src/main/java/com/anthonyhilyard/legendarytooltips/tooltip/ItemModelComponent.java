@@ -2,6 +2,7 @@ package com.anthonyhilyard.legendarytooltips.tooltip;
 
 import java.util.List;
 
+import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
@@ -14,7 +15,6 @@ import com.anthonyhilyard.prism.text.DynamicColor;
 import com.anthonyhilyard.prism.util.ColorUtil;
 import com.anthonyhilyard.prism.util.ConfigHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.gui.Font;
@@ -67,16 +67,17 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 	public static int getRenderWidth() { return 22; }
 	
 	@Override
-	public int getHeight() { return 4; }
+	public int getHeight(Font font) { return 4; }
 
 	// Hacky hack to get rendering working properly...
 	@Override
 	public int getWidth(Font p_169952_) { return -(getRenderWidth() + PADDING * 3); }
 
 	@Override
-	public void renderImage(Font font, int x, int y, GuiGraphics graphics)
+	public void renderImage(Font font, int x, int y, int width, int height, GuiGraphics graphics)
 	{
 		// We need to flush the GuiGraphics immediately since we are utilizing the modelViewStack for rendering the item model.
+		// TODO: Verify that graphics.flush() still exists in 1.21.8; it may have been renamed or removed.
 		graphics.flush();
 
 		y--;
@@ -93,8 +94,10 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		int backgroundStart = ColorUtil.combineARGB((int)(backgroundStartColor.alpha() * 0.15f), backgroundStartColor.red(), backgroundStartColor.green(), backgroundStartColor.blue());
 		int backgroundEnd = ColorUtil.combineARGB((int)(backgroundEndColor.alpha() * 0.6f), backgroundEndColor.red(), backgroundEndColor.green(), backgroundEndColor.blue());
 
-		PoseStack poseStack = graphics.pose();
-		Matrix4f matrix = poseStack.last().pose();
+		// In 1.21.8, graphics.pose() returns Matrix3x2fStack instead of PoseStack.
+		// We construct a Matrix4f from the 3x2 matrix using JOML's Matrix4f.set(Matrix3x2fc).
+		Matrix3x2fStack matrixStack = graphics.pose();
+		Matrix4f matrix = new Matrix4f().set(matrixStack);
 
 		// Draw the background first.
 		GuiHelper.drawGradientRect(matrix, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundStart, backgroundEnd);
@@ -126,6 +129,7 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		modelViewStack.mul(matrix);
 		modelViewStack.translate(x + margin - 1, y + margin - 1, -120.0f);
 		modelViewStack.scale(1.25f, 1.25f, 1.0f);
+		// TODO: RenderSystem.applyModelViewMatrix() may have been removed in 1.21.8. Verify and remove if no longer needed.
 		RenderSystem.applyModelViewMatrix();
 
 		float rotationAngle = 0.0f;
@@ -137,6 +141,7 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		customItemRenderer.renderDetailModelIntoGUI(itemStack, 0, 0, Axis.YP.rotationDegrees(rotationAngle), graphics);
 
 		modelViewStack.popMatrix();
+		// TODO: RenderSystem.applyModelViewMatrix() may have been removed in 1.21.8. Verify and remove if no longer needed.
 		RenderSystem.applyModelViewMatrix();
 	}
 

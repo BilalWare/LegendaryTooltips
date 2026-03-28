@@ -31,12 +31,11 @@ public class BakedGlyphMixin
 	@Unique
 	private Vector3f currentBottom = new Vector3f();
 
-
-	@Inject(method = "render", at = @At("HEAD"))
-	private void grabLocals(boolean bl, float x, float y, Matrix4f matrix4f, VertexConsumer vertexConsumer, float h, float i, float j, float k, int l, CallbackInfo info)
+	@Inject(method = "render(ZFFFLorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexConsumer;IZI)V", at = @At("HEAD"))
+	private void grabLocals(boolean italic, float x, float y, float z, Matrix4f matrix4f, VertexConsumer vertexConsumer, int color, boolean bold, int light, CallbackInfo info)
 	{
-		matrix4f.transformPosition(x, y, 0, currentTop);
-		matrix4f.transformPosition(x, y + down, 0, currentBottom);
+		matrix4f.transformPosition(x, y, z, currentTop);
+		matrix4f.transformPosition(x, y + down, z, currentBottom);
 	}
 
 	private final float fadeThickness = 10.0f;
@@ -62,47 +61,56 @@ public class BakedGlyphMixin
 		return 1.0f;
 	}
 
-	@ModifyArg(method = "render",
-		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setColor(FFFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 0), index = 3)
-	private float fadeGlyphs0(float r, float g, float b, float a)
+	@Unique
+	private int applyFadeAlpha(int color, float vertexY)
 	{
-		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
-		{
-			a = calculateFadeAlpha(currentTop.y);
-		}
-		return a;
+		float alpha = calculateFadeAlpha(vertexY);
+		int existingAlpha = (color >> 24) & 0xFF;
+		int newAlpha = (int)(existingAlpha * alpha);
+		return (color & 0x00FFFFFF) | (newAlpha << 24);
 	}
 
-	@ModifyArg(method = "render",
-		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setColor(FFFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 1), index = 3)
-	private float fadeGlyphs1(float r, float g, float b, float a)
+	@ModifyArg(method = "render(ZFFFLorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexConsumer;IZI)V",
+		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 0), index = 0)
+	private int fadeGlyphs0(int color)
 	{
 		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
 		{
-			a = calculateFadeAlpha(currentBottom.y);
+			return applyFadeAlpha(color, currentTop.y);
 		}
-		return a;
+		return color;
 	}
 
-	@ModifyArg(method = "render",
-		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setColor(FFFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 2), index = 3)
-	private float fadeGlyphs2(float r, float g, float b, float a)
+	@ModifyArg(method = "render(ZFFFLorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexConsumer;IZI)V",
+		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 1), index = 0)
+	private int fadeGlyphs1(int color)
 	{
 		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
 		{
-			a = calculateFadeAlpha(currentBottom.y);
+			return applyFadeAlpha(color, currentBottom.y);
 		}
-		return a;
+		return color;
 	}
 
-	@ModifyArg(method = "render",
-		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setColor(FFFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 3), index = 3)
-	private float fadeGlyphs3(float r, float g, float b, float a)
+	@ModifyArg(method = "render(ZFFFLorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexConsumer;IZI)V",
+		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 2), index = 0)
+	private int fadeGlyphs2(int color)
 	{
 		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
 		{
-			a = calculateFadeAlpha(currentTop.y);
+			return applyFadeAlpha(color, currentBottom.y);
 		}
-		return a;
+		return color;
+	}
+
+	@ModifyArg(method = "render(ZFFFLorg/joml/Matrix4f;Lcom/mojang/blaze3d/vertex/VertexConsumer;IZI)V",
+		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 3), index = 0)
+	private int fadeGlyphs3(int color)
+	{
+		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
+		{
+			return applyFadeAlpha(color, currentTop.y);
+		}
+		return color;
 	}
 }

@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "minecraft-dev": {
+      "command": "node",
+      "args": ["/home/bilalware/.npm-global/lib/node_modules/@mcdxai/minecraft-dev-mcp/dist/index.js"]
+    },
+    "fetch": {
+      "command": "/home/bilalware/.local/bin/uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "intellij": {
+      "type": "sse",
+      "url": "http://127.0.0.1:29170/index-mcp/sse"
+    },
+    "intellij-debugger": {
+      "type": "sse",
+      "url": "http://127.0.0.1:29190/debugger-mcp/sse"
+    }
+  }
+}
