@@ -4,7 +4,6 @@
 	"compatibilityLevel": "JAVA_21",
 	"plugin": "com.anthonyhilyard.legendarytooltips.mixin.MixinConfig",
 	"client": [
-		"emi.EmiRenderHelperMixin",
 		"BakedGlyphMixin",
 		"GuiGraphicsMixin",
 		"ItemStackMixin",

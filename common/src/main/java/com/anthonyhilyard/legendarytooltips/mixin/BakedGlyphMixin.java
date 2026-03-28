@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.anthonyhilyard.iceberg.util.Tooltips;
-import com.anthonyhilyard.iceberg.util.Tooltips.TooltipRenderContext;
 import com.anthonyhilyard.legendarytooltips.tooltip.TooltipScroll;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -42,9 +41,10 @@ public class BakedGlyphMixin
 	@Unique
 	private float calculateFadeAlpha(float vertexY)
 	{
-		TooltipRenderContext context = Tooltips.getCurrentRenderContext();
-		float scrollTop = TooltipScroll.getScrollTop(context.index());
-		float scrollBottom = TooltipScroll.getScrollBottom(context.index());
+		// TODO: Tooltips.getCurrentRenderContext() does not exist in this Iceberg version. Using index 0 as default.
+		int contextIndex = 0;
+		float scrollTop = TooltipScroll.getScrollTop(contextIndex);
+		float scrollBottom = TooltipScroll.getScrollBottom(contextIndex);
 		float topFadeStart = scrollTop;
 		float topFadeEnd = scrollTop + fadeThickness;
 		float bottomFadeStart = scrollBottom - fadeThickness;
@@ -74,7 +74,7 @@ public class BakedGlyphMixin
 		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 0), index = 0)
 	private int fadeGlyphs0(int color)
 	{
-		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
+		if (TooltipScroll.isTooltipVisible(0 /* TODO: Tooltips.getCurrentRenderContext() unavailable */))
 		{
 			return applyFadeAlpha(color, currentTop.y);
 		}
@@ -85,7 +85,7 @@ public class BakedGlyphMixin
 		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 1), index = 0)
 	private int fadeGlyphs1(int color)
 	{
-		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
+		if (TooltipScroll.isTooltipVisible(0 /* TODO: Tooltips.getCurrentRenderContext() unavailable */))
 		{
 			return applyFadeAlpha(color, currentBottom.y);
 		}
@@ -96,7 +96,7 @@ public class BakedGlyphMixin
 		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 2), index = 0)
 	private int fadeGlyphs2(int color)
 	{
-		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
+		if (TooltipScroll.isTooltipVisible(0 /* TODO: Tooltips.getCurrentRenderContext() unavailable */))
 		{
 			return applyFadeAlpha(color, currentBottom.y);
 		}
@@ -107,7 +107,7 @@ public class BakedGlyphMixin
 		at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;color(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;", ordinal = 3), index = 0)
 	private int fadeGlyphs3(int color)
 	{
-		if (TooltipScroll.isTooltipVisible(Tooltips.getCurrentRenderContext().index()))
+		if (TooltipScroll.isTooltipVisible(0 /* TODO: Tooltips.getCurrentRenderContext() unavailable */))
 		{
 			return applyFadeAlpha(color, currentTop.y);
 		}

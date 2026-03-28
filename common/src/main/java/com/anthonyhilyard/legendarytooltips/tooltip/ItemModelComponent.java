@@ -76,28 +76,32 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 	@Override
 	public void renderImage(Font font, int x, int y, int width, int height, GuiGraphics graphics)
 	{
-		// We need to flush the GuiGraphics immediately since we are utilizing the modelViewStack for rendering the item model.
-		// TODO: Verify that graphics.flush() still exists in 1.21.8; it may have been renamed or removed.
-		graphics.flush();
+		// TODO: graphics.flush() has been removed in 1.21.8. The rendering pipeline has changed.
+		// We previously flushed to ensure the model view stack was applied correctly.
 
 		y--;
 		x--;
 		int z = 0;
 		final int margin = 2;
 
-		DynamicColor borderStartColor = DynamicColor.fromRgb(Tooltips.currentColors.borderColorStart());
-		DynamicColor borderEndColor = DynamicColor.fromRgb(Tooltips.currentColors.borderColorEnd());
-		DynamicColor backgroundStartColor = DynamicColor.fromRgb(Tooltips.currentColors.backgroundColorStart());
-		DynamicColor backgroundEndColor = ConfigHelper.applyModifiers(List.of("v+35", "s+10"), DynamicColor.fromRgb(Tooltips.currentColors.backgroundColorEnd()));
+		DynamicColor borderStartColor = DynamicColor.fromRgb(Tooltips.currentColors.borderColorStart().getValue());
+		DynamicColor borderEndColor = DynamicColor.fromRgb(Tooltips.currentColors.borderColorEnd().getValue());
+		DynamicColor backgroundStartColor = DynamicColor.fromRgb(Tooltips.currentColors.backgroundColorStart().getValue());
+		DynamicColor backgroundEndColor = ConfigHelper.applyModifiers(List.of("v+35", "s+10"), DynamicColor.fromRgb(Tooltips.currentColors.backgroundColorEnd().getValue()));
 
 		int borderColor = ColorUtil.combineARGB((int)(borderStartColor.alpha() * 0.35f), borderStartColor.red(), borderStartColor.green(), borderStartColor.blue());
 		int backgroundStart = ColorUtil.combineARGB((int)(backgroundStartColor.alpha() * 0.15f), backgroundStartColor.red(), backgroundStartColor.green(), backgroundStartColor.blue());
 		int backgroundEnd = ColorUtil.combineARGB((int)(backgroundEndColor.alpha() * 0.6f), backgroundEndColor.red(), backgroundEndColor.green(), backgroundEndColor.blue());
 
 		// In 1.21.8, graphics.pose() returns Matrix3x2fStack instead of PoseStack.
-		// We construct a Matrix4f from the 3x2 matrix using JOML's Matrix4f.set(Matrix3x2fc).
+		// We construct a Matrix4f from the 3x2 matrix using JOML's Matrix4f.set3x2(Matrix3x2fc).
 		Matrix3x2fStack matrixStack = graphics.pose();
-		Matrix4f matrix = new Matrix4f().set(matrixStack);
+		Matrix4f matrix = new Matrix4f(
+			matrixStack.m00(), matrixStack.m01(), 0, 0,
+			matrixStack.m10(), matrixStack.m11(), 0, 0,
+			0, 0, 1, 0,
+			matrixStack.m20(), matrixStack.m21(), 0, 1
+		);
 
 		// Draw the background first.
 		GuiHelper.drawGradientRect(matrix, z, x + margin + 1, y + margin + 1, x + getRenderWidth() - margin - 1, y + getRenderHeight() - margin - 1, backgroundStart, backgroundEnd);
@@ -129,8 +133,7 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		modelViewStack.mul(matrix);
 		modelViewStack.translate(x + margin - 1, y + margin - 1, -120.0f);
 		modelViewStack.scale(1.25f, 1.25f, 1.0f);
-		// TODO: RenderSystem.applyModelViewMatrix() may have been removed in 1.21.8. Verify and remove if no longer needed.
-		RenderSystem.applyModelViewMatrix();
+		// TODO: RenderSystem.applyModelViewMatrix() has been removed in 1.21.8. The model view matrix is now applied differently.
 
 		float rotationAngle = 0.0f;
 		if (LegendaryTooltipsConfig.getInstance().modelRotationSpeed.get() > 0)
@@ -141,8 +144,6 @@ public class ItemModelComponent implements TooltipComponent, ClientTooltipCompon
 		customItemRenderer.renderDetailModelIntoGUI(itemStack, 0, 0, Axis.YP.rotationDegrees(rotationAngle), graphics);
 
 		modelViewStack.popMatrix();
-		// TODO: RenderSystem.applyModelViewMatrix() may have been removed in 1.21.8. Verify and remove if no longer needed.
-		RenderSystem.applyModelViewMatrix();
 	}
 
 	public static void registerFactory()

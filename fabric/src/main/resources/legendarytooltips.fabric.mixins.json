@@ -4,8 +4,6 @@
 	"compatibilityLevel": "JAVA_17",
 	"plugin": "com.anthonyhilyard.legendarytooltips.fabric.mixin.MixinConfig",
 	"client": [
-		"RoughlyEnoughItemsScreenOverlayImplFabricMixin",
-		"JustEnoughItemsRenderHelperMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

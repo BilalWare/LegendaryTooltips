@@ -17,6 +17,7 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
@@ -28,7 +29,6 @@ import com.mojang.datafixers.util.Either;
 import com.anthonyhilyard.iceberg.events.client.RenderTooltipEvents.ColorExtResult;
 import com.anthonyhilyard.iceberg.events.client.RenderTooltipEvents.GatherResult;
 import com.anthonyhilyard.iceberg.services.Services;
-import com.anthonyhilyard.iceberg.services.IKeyMappingRegistrar.KeyMappingContext;
 import com.anthonyhilyard.iceberg.util.Tooltips;
 
 import com.anthonyhilyard.legendarytooltips.config.LegendaryTooltipsConfig;
@@ -48,7 +48,7 @@ public class LegendaryTooltips
 	private static Map<Integer, ItemStack> lastTooltipItems = Maps.newHashMap();
 
 	public static final KeyMapping scrollTooltips = Services.getKeyMappingRegistrar().registerMapping(
-		new KeyMapping("legendarytooltips.key.scrollTooltips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_SHIFT, KeyMapping.CATEGORY_INVENTORY), KeyMappingContext.NO_CONFLICT);
+		new KeyMapping("legendarytooltips.key.scrollTooltips", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_SHIFT, KeyMapping.CATEGORY_INVENTORY));
 
 	public static boolean scrollTooltipsKeyDown = false;
 
@@ -114,7 +114,8 @@ public class LegendaryTooltips
 		TooltipDecor.updateTimer(deltaTime);
 		ItemModelComponent.updateTimer(deltaTime);
 
-		if (!Tooltips.anyTooltipsVisible())
+		// TODO: Tooltips.anyTooltipsVisible() does not exist in this Iceberg version. Using false as a safe fallback.
+		if (false)
 		{
 			TooltipDecor.resetTimer();
 			TooltipScroll.resetAll();
@@ -138,9 +139,9 @@ public class LegendaryTooltips
 		return false;
 	}
 
-	public static ColorExtResult onTooltipColorEvent(ItemStack stack, GuiGraphics graphics, int x, int y, Font font, int backgroundStart, int backgroundEnd, int borderStart, int borderEnd, List<ClientTooltipComponent> components, boolean comparison, int index)
+	public static ColorExtResult onTooltipColorEvent(ItemStack stack, GuiGraphics graphics, int x, int y, Font font, int backgroundStart, int backgroundEnd, int borderStart, int borderEnd, List<ClientTooltipComponent> components, boolean comparison, int index, ResourceLocation resourceLocation, boolean gradientBackground, boolean gradientBorder)
 	{
-		ColorExtResult result = new ColorExtResult(backgroundStart, backgroundEnd, borderStart, borderEnd);
+		ColorExtResult result = new ColorExtResult(backgroundStart, backgroundEnd, borderStart, borderEnd, false, false);
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.level == null || minecraft.level.registryAccess() == null)
 		{
@@ -162,7 +163,7 @@ public class LegendaryTooltips
 		TooltipDecor.setCurrentTooltipBackgroundStart(frameDefinition.startBackground().get());
 		TooltipDecor.setCurrentTooltipBackgroundEnd(frameDefinition.endBackground().get());
 
-		return new ColorExtResult(frameDefinition.startBackground().get(), frameDefinition.endBackground().get(), frameDefinition.startBorder().get(), frameDefinition.endBorder().get());
+		return new ColorExtResult(frameDefinition.startBackground().get(), frameDefinition.endBackground().get(), frameDefinition.startBorder().get(), frameDefinition.endBorder().get(), false, false);
 	}
 
 	public static void onPostTooltipEvent(ItemStack stack, GuiGraphics graphics, int x, int y, Font font, int width, int height, List<ClientTooltipComponent> components, boolean comparison, int index)

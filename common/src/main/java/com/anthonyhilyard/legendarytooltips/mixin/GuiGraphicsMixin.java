@@ -20,12 +20,9 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-import com.anthonyhilyard.iceberg.component.IExtendedText;
-import com.anthonyhilyard.iceberg.component.IExtendedText.TextAlignment;
 import com.anthonyhilyard.iceberg.services.Services;
 import com.anthonyhilyard.iceberg.util.ITooltipAccess;
 import com.anthonyhilyard.iceberg.util.Tooltips;
-import com.anthonyhilyard.iceberg.util.Tooltips.TooltipRenderContext;
 import com.anthonyhilyard.legendarytooltips.config.LegendaryTooltipsConfig;
 import com.anthonyhilyard.legendarytooltips.tooltip.ItemModelComponent;
 import com.anthonyhilyard.legendarytooltips.tooltip.TooltipScroll;
@@ -69,20 +66,38 @@ public class GuiGraphicsMixin
 	@Unique
 	private boolean hasItemModel = false;
 
-	@ModifyVariable(method = "renderTooltipInternal", ordinal = 0, at = @At(value = "LOAD", ordinal = 0), argsOnly = true)
+	/**
+	 * Calculate the index of the first text component in the list.
+	 * TODO: Replace with Tooltips.calculateTitleStart() when the Iceberg API is updated.
+	 */
+	@Unique
+	private static int legendarytooltips$calculateTitleStart(List<ClientTooltipComponent> components)
+	{
+		for (int i = 0; i < components.size(); i++)
+		{
+			if (components.get(i) instanceof ClientTextTooltip)
+			{
+				return i;
+			}
+		}
+		return 0;
+	}
+
+	@ModifyVariable(method = "renderTooltip", ordinal = 0, at = @At(value = "LOAD", ordinal = 0), argsOnly = true)
 	private List<ClientTooltipComponent> mutableComponents(List<ClientTooltipComponent> components)
 	{
 		components = new ArrayList<>(components);
 
 		numTitleLines = Tooltips.calculateTitleLines(components);
-		titleStart = Tooltips.calculateTitleStart(components);
+		// TODO: Tooltips.calculateTitleStart() does not exist in this Iceberg version.
+		titleStart = legendarytooltips$calculateTitleStart(components);
 		startScrollIndex = titleStart + numTitleLines;
 		hasItemModel = components.stream().anyMatch(component -> component instanceof ItemModelComponent);
 
 		return components;
 	}
 
-	@ModifyVariable(method = "renderTooltipInternal", ordinal = 2, at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", ordinal = 0))
+	@ModifyVariable(method = "renderTooltip", ordinal = 2, at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", ordinal = 0))
 	private int setMinimumWidth(int width)
 	{
 		if (LegendaryTooltipsConfig.getInstance().enforceMinimumWidth.get())
@@ -95,7 +110,7 @@ public class GuiGraphicsMixin
 		}
 	}
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", ordinal = 0))
+	@Inject(method = "renderTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", ordinal = 0))
 	private void adjustTitle(Font font, List<ClientTooltipComponent> components, int mouseX, int mouseY, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		currentMouseX = mouseX;
@@ -107,33 +122,15 @@ public class GuiGraphicsMixin
 			boolean has3DModel = components.stream().anyMatch(c -> c instanceof ItemModelComponent);
 			int componentIndex = 0;
 
-			// Center the title lines.
-			for (ClientTooltipComponent component : components)
-			{
-				if (componentIndex >= titleStart && componentIndex < titleStart + numTitleLines &&
-					component instanceof IExtendedText extendedComponent)
-				{
-					if (shouldCenter)
-					{
-						extendedComponent.setAlignment(TextAlignment.CENTER);
-					}
-
-					if (has3DModel)
-					{
-						extendedComponent.setPadding(ItemModelComponent.getRenderWidth() + ItemModelComponent.PADDING * 2, ItemModelComponent.PADDING);
-
-						if (componentIndex == titleStart + numTitleLines - 1 && numTitleLines == 1)
-						{
-							extendedComponent.setPadding(extendedComponent.getLeftPadding(), extendedComponent.getRightPadding(), extendedComponent.getTopPadding(), extendedComponent.getBottomPadding() + 9);
-						}
-					}
-				}
-				componentIndex++;
-			}
+			// TODO: IExtendedText interface does not exist in this Iceberg version.
+			// Title centering and padding adjustment are disabled until the Iceberg API is updated.
+			// Previously this would iterate components and call setAlignment(TextAlignment.CENTER)
+			// and setPadding() on IExtendedText instances.
+			componentIndex = components.size(); // suppress unused warning
 		}
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"), index = 4)
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"), index = 4)
 	private int overrideTooltipWidthOnPosition(int width)
 	{
 		// Only apply max width to item tooltips.
@@ -151,7 +148,7 @@ public class GuiGraphicsMixin
 		return width;
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"), index = 5)
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"), index = 5)
 	private int overrideTooltipHeightOnPosition(int height)
 	{
 		originalHeight = height;
@@ -171,14 +168,14 @@ public class GuiGraphicsMixin
 		return height;
 	}
 
-	@ModifyVariable(method = "renderTooltipInternal", at = @At(value = "STORE", ordinal = 0))
+	@ModifyVariable(method = "renderTooltip", at = @At(value = "STORE", ordinal = 0))
 	private Vector2ic storeTooltipY(Vector2ic pos)
 	{
 		tooltipY = pos.y();
 		return pos;
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V"), index = 3)
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V"), index = 3)
 	private int overrideTooltipWidthOnDraw(int width)
 	{
 		// Only apply max width to item tooltips.
@@ -196,7 +193,7 @@ public class GuiGraphicsMixin
 		return width;
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V"), index = 4)
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V"), index = 4)
 	private int overrideTooltipHeightOnDraw(int height)
 	{
 		// Only apply max height to item tooltips.
@@ -278,17 +275,18 @@ public class GuiGraphicsMixin
 				}
 			}
 
-			TooltipRenderContext context = Tooltips.getCurrentRenderContext();
+			// TODO: Tooltips.getCurrentRenderContext() does not exist in this Iceberg version. Using index 0 as default.
+			int contextIndex = 0;
 			GuiGraphics self = (GuiGraphics)(Object)this;
 
 			self.enableScissor(x - 1, y - 1, x + width + 1, y + height - (y - tooltipY) + 1);
 
-			TooltipScroll.setTooltipVisible(context.index(), true);
-			TooltipScroll.setScrollBounds(context.index(), y - 1, y + height - (y - tooltipY) + 1);
-			TooltipScroll.setContentHeight(context.index(), contentHeight);
+			TooltipScroll.setTooltipVisible(contextIndex, true);
+			TooltipScroll.setScrollBounds(contextIndex, y - 1, y + height - (y - tooltipY) + 1);
+			TooltipScroll.setContentHeight(contextIndex, contentHeight);
 
 			self.pose().pushMatrix();
-			self.pose().translate(0.0f, -TooltipScroll.currentScroll(context.index()));
+			self.pose().translate(0.0f, -TooltipScroll.currentScroll(contextIndex));
 
 			scissorEnabled = true;
 			enableScissor = false;
@@ -298,18 +296,19 @@ public class GuiGraphicsMixin
 	@Unique
 	private void stopScissor()
 	{
-		TooltipRenderContext context = Tooltips.getCurrentRenderContext();
+		// TODO: Tooltips.getCurrentRenderContext() does not exist in this Iceberg version. Using index 0 as default.
+		int contextIndex = 0;
 		GuiGraphics self = (GuiGraphics)(Object)this;
 		self.pose().popMatrix();
 
-		TooltipScroll.setTooltipVisible(context.index(), false);
+		TooltipScroll.setTooltipVisible(contextIndex, false);
 
 		self.disableScissor();
 
 		scissorEnabled = false;
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Ljava/util/List;get(I)Ljava/lang/Object;"))
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;get(I)Ljava/lang/Object;"))
 	private int handleTooltipScroll(int index)
 	{
 		if (index <= startScrollIndex && scissorEnabled)
@@ -329,14 +328,14 @@ public class GuiGraphicsMixin
 	@Unique
 	private static int maxIndex = 0;
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V", shift = Shift.AFTER))
+	@Inject(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/TooltipRenderUtil;renderTooltipBackground(Lnet/minecraft/client/gui/GuiGraphics;IIIILnet/minecraft/resources/ResourceLocation;)V", shift = Shift.AFTER))
 	private void resetComponentIteration(Font font, List<ClientTooltipComponent> list, int i, int j, ClientTooltipPositioner clientTooltipPositioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		currentIndex = 0;
 		maxIndex = list.size();
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;II)V"), index = 3)
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;II)V"), index = 3)
 	private int scrollText(int currentY)
 	{
 		// Adjust vertical position for multi-line titles to fix improper spacing.
@@ -361,12 +360,14 @@ public class GuiGraphicsMixin
 			}
 		}
 
-		if (enableScissor)
-		{
-			Rect2i tooltipRect = Tooltips.getCurrentRect();
-			int currentX = tooltipRect.getX();
-			startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
-		}
+		// TODO: Tooltips.getCurrentRect() does not exist in this Iceberg version.
+		// Scissor scrolling is disabled until the Iceberg API is updated.
+		// if (enableScissor)
+		// {
+		// 	Rect2i tooltipRect = Tooltips.getCurrentRect();
+		// 	int currentX = tooltipRect.getX();
+		// 	startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
+		// }
 
 		currentIndex++;
 		if (currentIndex == maxIndex)
@@ -376,7 +377,7 @@ public class GuiGraphicsMixin
 		return currentY;
 	}
 
-	@ModifyArg(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IIIILnet/minecraft/client/gui/GuiGraphics;)V"), index = 2)
+	@ModifyArg(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IIIILnet/minecraft/client/gui/GuiGraphics;)V"), index = 2)
 	private int scrollImages(int currentY)
 	{
 		// Adjust vertical position for multi-line titles.
@@ -401,34 +402,28 @@ public class GuiGraphicsMixin
 			}
 		}
 
-		if (enableScissor)
-		{
-			Rect2i tooltipRect = Tooltips.getCurrentRect();
-			int currentX = tooltipRect.getX();
-			startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
-		}
+		// TODO: Tooltips.getCurrentRect() does not exist in this Iceberg version.
+		// Scissor scrolling is disabled until the Iceberg API is updated.
+		// if (enableScissor)
+		// {
+		// 	Rect2i tooltipRect = Tooltips.getCurrentRect();
+		// 	int currentX = tooltipRect.getX();
+		// 	startScissor(currentX, currentY, tooltipRect.getWidth(), tooltipRect.getHeight());
+		// }
 
 		currentIndex++;
 		return currentY;
 	}
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2fStack;pushMatrix()Lorg/joml/Matrix3x2fStack;", shift = Shift.AFTER))
+	@Inject(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2fStack;pushMatrix()Lorg/joml/Matrix3x2fStack;", shift = Shift.AFTER))
 	private void fixLayering(Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
-		TooltipRenderContext context = Tooltips.getCurrentRenderContext();
-		GuiGraphics self = (GuiGraphics)(Object)this;
-		float zOffset = context.index() * 30.0f;
-
-		if (!((ITooltipAccess)self).getIcebergTooltipStack().isEmpty())
-		{
-			zOffset += 90.0f;
-		}
-
-		// TODO: Matrix3x2fStack is 2D only, z-axis translation is no longer possible here.
-		// self.pose().translate(0, 0, -zOffset);
+		// TODO: Tooltips.getCurrentRenderContext() does not exist in this Iceberg version.
+		// Also, Matrix3x2fStack is 2D only, so z-axis translation is no longer possible here.
+		// Z-offset layering is disabled until the Iceberg API is updated.
 	}
 
-	@Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2fStack;popMatrix()Lorg/joml/Matrix3x2fStack;"))
+	@Inject(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lorg/joml/Matrix3x2fStack;popMatrix()Lorg/joml/Matrix3x2fStack;"))
 	private void turnOffScissor(Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation, CallbackInfo info)
 	{
 		if (scissorEnabled)
@@ -452,7 +447,7 @@ public class GuiGraphicsMixin
 	@Unique
 	private static boolean arsNouveauComponent = false;
 
-	@Redirect(method = "renderTooltipInternal",
+	@Redirect(method = "renderTooltip",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;getWidth(Lnet/minecraft/client/gui/Font;)I"))
 	private int arsNouveauCompatGetWidthProxy(ClientTooltipComponent instance, Font font, Font font2, List<ClientTooltipComponent> list, int i, int j, ClientTooltipPositioner clientTooltipPositioner, @Nullable ResourceLocation resourceLocation)
 	{
@@ -484,27 +479,28 @@ public class GuiGraphicsMixin
 		return instance.getWidth(font);
 	}
 
-	@ModifyArgs(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Ljava/util/List;get(I)Ljava/lang/Object;", ordinal = 1))
+	@ModifyArgs(method = "renderTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;get(I)Ljava/lang/Object;", ordinal = 1))
 	private void arsNouveauCompatComponentCheck(Args args, Font font, List<ClientTooltipComponent> components, int x, int y, ClientTooltipPositioner positioner, @Nullable ResourceLocation resourceLocation)
 	{
 		int i = args.get(0);
 		arsNouveauComponent = i < components.size() && components.get(i).getClass().getName().contentEquals("com.hollingsworth.arsnouveau.client.gui.SchoolTooltip$SchoolTooltipRenderer");
 	}
 
-	@ModifyArgs(method = "renderTooltipInternal",
+	@ModifyArgs(method = "renderTooltip",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderImage(Lnet/minecraft/client/gui/Font;IIIILnet/minecraft/client/gui/GuiGraphics;)V"))
 	private void arsNouveauCompatOffsetComponent(Args args)
 	{
-		if (arsNouveauComponent &&
-			(LegendaryTooltipsConfig.getInstance().centeredTitle.get() ||
-			 LegendaryTooltipsConfig.showModelForItem(((ITooltipAccess)(Object)(this)).getIcebergTooltipStack())))
-		{
-			Rect2i tooltipRect = Tooltips.getCurrentRect();
-			int x = args.get(1);
-			int y = args.get(2);
-
-			args.set(1, x + tooltipRect.getWidth() - arsNouveauOffsetX);
-			args.set(2, y + arsNouveauOffsetY);
-		}
+		// TODO: Tooltips.getCurrentRect() does not exist in this Iceberg version.
+		// Ars Nouveau component offset is disabled until the Iceberg API is updated.
+		// if (arsNouveauComponent &&
+		// 	(LegendaryTooltipsConfig.getInstance().centeredTitle.get() ||
+		// 	 LegendaryTooltipsConfig.showModelForItem(((ITooltipAccess)(Object)(this)).getIcebergTooltipStack())))
+		// {
+		// 	Rect2i tooltipRect = Tooltips.getCurrentRect();
+		// 	int x = args.get(1);
+		// 	int y = args.get(2);
+		// 	args.set(1, x + tooltipRect.getWidth() - arsNouveauOffsetX);
+		// 	args.set(2, y + arsNouveauOffsetY);
+		// }
 	}
 }

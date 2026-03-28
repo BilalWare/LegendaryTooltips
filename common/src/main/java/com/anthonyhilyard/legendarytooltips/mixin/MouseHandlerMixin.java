@@ -25,7 +25,9 @@ public class MouseHandlerMixin
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDDD)Z"))
 	private void scrollTooltips(long windowHandle, double dx, double dy, CallbackInfo info)
 	{
-		if (Tooltips.anyTooltipsVisible() && LegendaryTooltipsConfig.shouldScrollTooltip())
+		// TODO: Tooltips.anyTooltipsVisible() does not exist in this Iceberg version.
+		// Using a fallback check that just checks the config setting.
+		if (LegendaryTooltipsConfig.shouldScrollTooltip())
 		{
 			if (windowHandle == minecraft.getWindow().getWindow())
 			{

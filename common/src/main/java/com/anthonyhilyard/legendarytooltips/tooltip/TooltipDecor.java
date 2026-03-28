@@ -2,14 +2,10 @@ package com.anthonyhilyard.legendarytooltips.tooltip;
 
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-
-import org.joml.Matrix4f;
 
 import java.util.List;
 
@@ -17,18 +13,15 @@ import com.anthonyhilyard.iceberg.util.GuiHelper;
 import com.anthonyhilyard.iceberg.util.Tooltips;
 import com.anthonyhilyard.iceberg.util.Tooltips.TooltipColors;
 import com.anthonyhilyard.iceberg.util.Easing.EasingType;
-import com.anthonyhilyard.iceberg.component.TitleBreakComponent;
+import com.anthonyhilyard.iceberg.util.Tooltips.TitleBreakComponent;
 import com.anthonyhilyard.iceberg.util.Easing;
 import com.anthonyhilyard.legendarytooltips.LegendaryTooltips;
 import com.anthonyhilyard.legendarytooltips.config.LegendaryTooltipsConfig;
 import com.anthonyhilyard.legendarytooltips.config.LegendaryTooltipsConfig.FrameDefinition;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.gui.GuiGraphics;
-
-import org.lwjgl.opengl.GL11;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.TextColor;
 
 public class TooltipDecor
 {
@@ -38,22 +31,22 @@ public class TooltipDecor
 
 	public static void setCurrentTooltipBorderStart(int color)
 	{
-		Tooltips.currentColors = new TooltipColors(Tooltips.currentColors.backgroundColorStart(), Tooltips.currentColors.backgroundColorEnd(), color, Tooltips.currentColors.borderColorEnd());
+		Tooltips.currentColors = new TooltipColors(Tooltips.currentColors.backgroundColorStart(), Tooltips.currentColors.backgroundColorEnd(), TextColor.fromRgb(color), Tooltips.currentColors.borderColorEnd());
 	}
 
 	public static void setCurrentTooltipBorderEnd(int color)
 	{
-		Tooltips.currentColors = new TooltipColors(Tooltips.currentColors.backgroundColorStart(), Tooltips.currentColors.backgroundColorEnd(), Tooltips.currentColors.borderColorStart(), color);
+		Tooltips.currentColors = new TooltipColors(Tooltips.currentColors.backgroundColorStart(), Tooltips.currentColors.backgroundColorEnd(), Tooltips.currentColors.borderColorStart(), TextColor.fromRgb(color));
 	}
 
 	public static void setCurrentTooltipBackgroundStart(int color)
 	{
-		Tooltips.currentColors = new TooltipColors(color, Tooltips.currentColors.backgroundColorEnd(), Tooltips.currentColors.borderColorStart(), Tooltips.currentColors.borderColorEnd());
+		Tooltips.currentColors = new TooltipColors(TextColor.fromRgb(color), Tooltips.currentColors.backgroundColorEnd(), Tooltips.currentColors.borderColorStart(), Tooltips.currentColors.borderColorEnd());
 	}
 
 	public static void setCurrentTooltipBackgroundEnd(int color)
 	{
-		Tooltips.currentColors = new TooltipColors(Tooltips.currentColors.backgroundColorStart(), color, Tooltips.currentColors.borderColorStart(), Tooltips.currentColors.borderColorEnd());
+		Tooltips.currentColors = new TooltipColors(Tooltips.currentColors.backgroundColorStart(), TextColor.fromRgb(color), Tooltips.currentColors.borderColorStart(), Tooltips.currentColors.borderColorEnd());
 	}
 
 	public static void updateTimer(float deltaTime)
@@ -73,25 +66,35 @@ public class TooltipDecor
 	{
 		int shadowColor = 0x44000000;
 
-		graphics.pose().pushMatrix();
-		Matrix4f matrix = new Matrix4f().set(graphics.pose());
-		GuiHelper.drawGradientRect(matrix, 390, x - 1,         y + height + 4, x + width + 4, y + height + 5, shadowColor, shadowColor);
-		GuiHelper.drawGradientRect(matrix, 390, x + width + 4, y - 1,          x + width + 5, y + height + 5, shadowColor, shadowColor);
+		GuiHelper.drawGradientRect(graphics, 390, x - 1,         y + height + 4, x + width + 4, y + height + 5, shadowColor, shadowColor);
+		GuiHelper.drawGradientRect(graphics, 390, x + width + 4, y - 1,          x + width + 5, y + height + 5, shadowColor, shadowColor);
 
-		GuiHelper.drawGradientRect(matrix, 390, x + width + 3, y + height + 3, x + width + 4, y + height + 4, shadowColor, shadowColor);
+		GuiHelper.drawGradientRect(graphics, 390, x + width + 3, y + height + 3, x + width + 4, y + height + 4, shadowColor, shadowColor);
 
-		GuiHelper.drawGradientRect(matrix, 390, x,             y + height + 5, x + width + 5, y + height + 6, shadowColor, shadowColor);
-		GuiHelper.drawGradientRect(matrix, 390, x + width + 5, y,              x + width + 6, y + height + 5, shadowColor, shadowColor);
-		graphics.pose().popMatrix();
+		GuiHelper.drawGradientRect(graphics, 390, x,             y + height + 5, x + width + 5, y + height + 6, shadowColor, shadowColor);
+		GuiHelper.drawGradientRect(graphics, 390, x + width + 5, y,              x + width + 6, y + height + 5, shadowColor, shadowColor);
 	}
 
 	public static void drawSeparator(GuiGraphics graphics, int x, int y, int width, int color)
 	{
-		graphics.pose().pushMatrix();
-		Matrix4f matrix = new Matrix4f().set(graphics.pose());
-		GuiHelper.drawGradientRectHorizontal(matrix, 400, x, y, x + width / 2, y + 1, color & 0xFFFFFF, color);
-		GuiHelper.drawGradientRectHorizontal(matrix, 400, x + width / 2, y, x + width, y + 1, color, color & 0xFFFFFF);
-		graphics.pose().popMatrix();
+		GuiHelper.drawGradientRectHorizontal(graphics, 400, x, y, x + width / 2, y + 1, color & 0xFFFFFF, color);
+		GuiHelper.drawGradientRectHorizontal(graphics, 400, x + width / 2, y, x + width, y + 1, color, color & 0xFFFFFF);
+	}
+
+	/**
+	 * Calculate the index of the first text component in the list.
+	 * TODO: Replace with Tooltips.calculateTitleStart() when the Iceberg API is updated.
+	 */
+	private static int calculateTitleStart(List<ClientTooltipComponent> components)
+	{
+		for (int i = 0; i < components.size(); i++)
+		{
+			if (components.get(i) instanceof ClientTextTooltip)
+			{
+				return i;
+			}
+		}
+		return 0;
 	}
 
 	public static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, ItemStack item, List<ClientTooltipComponent> components, Font font, FrameDefinition frameDefinition, boolean comparison, int index)
@@ -100,7 +103,7 @@ public class TooltipDecor
 		if (comparison)
 		{
 			// Now draw a separator under the "equipped" badge.
-			drawSeparator(graphics, x - 3 + 1, y - 3 + 1 + 12, width, Tooltips.currentColors.borderColorStart());
+			drawSeparator(graphics, x - 3 + 1, y - 3 + 1 + 12, width, Tooltips.currentColors.borderColorStart().getValue());
 
 			// TODO: Figure out why this is needed...
 			height++;
@@ -134,7 +137,8 @@ public class TooltipDecor
 				int offset = 0;
 
 				// Find the index of the first text component, which is where the actual title will start.
-				int titleStart = Tooltips.calculateTitleStart(components);
+				// TODO: Tooltips.calculateTitleStart() does not exist in this Iceberg version. Defaulting to 0.
+			int titleStart = calculateTitleStart(components);
 
 				// If we are displaying a model, adjust the offset for it.
 				if (components.stream().anyMatch(c -> c instanceof ItemModelComponent))
@@ -174,7 +178,7 @@ public class TooltipDecor
 				}
 
 				// Now draw the separator under the title.
-				drawSeparator(graphics, x - 3 + 1, y - 3 + 2 + offset, width, Tooltips.currentColors.borderColorStart());
+				drawSeparator(graphics, x - 3 + 1, y - 3 + 2 + offset, width, Tooltips.currentColors.borderColorStart().getValue());
 			}
 		}
 
@@ -188,7 +192,7 @@ public class TooltipDecor
 		{
 			// Draw shiny effect here.
 			graphics.pose().pushMatrix();
-			Matrix4f matrix = new Matrix4f().set(graphics.pose());
+			Matrix4f matrix = matrixFrom3x2(graphics.pose());
 
 			if (shineTimer >= 0.5f && shineTimer <= 1.5f)
 			{
@@ -220,17 +224,12 @@ public class TooltipDecor
 			graphics.pose().popMatrix();
 		}
 
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		RenderSystem.setShaderTexture(0, frameDefinition.resource());
-
-		// We have to bind the texture to be able to query it, so do that.
-		final Minecraft minecraft = Minecraft.getInstance();
-		AbstractTexture borderTexture = minecraft.getTextureManager().getTexture(frameDefinition.resource());
-		borderTexture.bind();
-
-		// Grab the width and height of the texture.  This should be 128x128, but old resource packs could still be using 64x64.
-		int textureWidth = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
-		int textureHeight = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
+		// TODO: In 1.21.8, RenderSystem.setShaderColor(), RenderSystem.setShaderTexture(), AbstractTexture.bind(),
+		// and GlStateManager._getTexLevelParameter() have been removed. The rendering pipeline now uses RenderPipelines.
+		// For now, default the texture dimensions to 128x128 (the standard size).
+		// Old resource packs using 64x64 will not be detected until the Iceberg rendering API is updated.
+		int textureWidth = 128;
+		int textureHeight = 128;
 
 		final int frameIndex = frameDefinition.index();
 		final int frameWidth = frameDefinition.frameWidth();
